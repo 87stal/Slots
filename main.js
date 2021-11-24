@@ -16,25 +16,14 @@
             TEXTURES_NAMES = ["CC", "DD", "EE", "WC", "WC_X2", "AA", "BB"];
             GENERAL_TEXTURE_PATH = "icons/";
             HERO_ADD_POSITION = cc.p(300, 750);
-            //all points hero could move to
-            HEROES_POSITIONS = new Map([
-                [1, cc.p(340, 801)],
-                [2, cc.p(340, 441)],
-                [3, cc.p(340, 621)],
-                [4, cc.p(340, 261)],
-                [5, cc.p(620, 801)],
-                [6, cc.p(620, 441)],
-                [7, cc.p(620, 621)],
-                [8, cc.p(620, 261)],
-                [9, cc.p(890, 801)],
-                [10, cc.p(890, 441)],
-                [11, cc.p(890, 621)],
-                [12, cc.p(890, 261)],
-            ]);
 
+            HEROES_POSITIONS = [340, 620, 890
+            ]
+
+            START_Y = 261
             GENERAL_MOVING_DURATION = 4;
             MOVING_DURATION = 2;
-            ELEMENT_HEIGHT = 158;
+            ELEMENT_HEIGHT = 180;
             BTN_SOUND = "res/btns.mp3";
             BTN_POSITION = cc.p(870, 110);
             BTN_PLUS_POSITION = cc.p(700, 110);
@@ -42,9 +31,13 @@
             BTN_MINUS_POSITION = cc.p(570, 110);
             BET_FIELD_POSITION = cc.p(605, 80);
 
+            reel1 = [];
+            reel2 = [];
+            reel3 = [];
+
 
             clippingLayer = null;
-            heroes = [];
+            heroes = [[], [], []];
             moveButton = null;
             let line1 = [];
             let line2 = [];
@@ -91,17 +84,17 @@
                 hero.setPosition(position);
                 hero['url'] = texturePath;
                 this.clippingLayer.addChild(hero);
-                hero.setTag(1);
-                if (index >= 0) {
-                    heroes[index].hero = hero;
-                } else {
-                    heroes.push({hero: hero});
-                }
+                return hero;
             };
 
             this.gameLogic = function () {
-                for (let position of HEROES_POSITIONS.values()) {
-                    this.createHero(position);
+                for (var i = 0; i < HEROES_POSITIONS.length; i++) {
+                    let elementY = START_Y;
+                    for (var j = 0; j < 4; j++) {
+                        let position = cc.p(HEROES_POSITIONS[i], elementY);
+                        heroes[i].push({hero: this.createHero(position)});
+                        elementY += ELEMENT_HEIGHT;
+                    }
                 }
             };
 
@@ -172,7 +165,6 @@
                         if (betIndex == betSteps.length - 1) {
                             this.enableBetPlusButton(false);
                         }
-
                         let bet = betSteps[betIndex];
                         this.createBetField(bet);
                     }
@@ -209,39 +201,43 @@
 
             this.heroesActions = function () {
                 this.createText("...");
-                heroes.map((picture, index, array) => {
-                    let element = picture.hero;
-                    element.runAction(cc.sequence(
-                        cc.moveTo(MOVING_DURATION, cc.p(element.x, element.y - element.height - 22)),
-                        cc.callFunc(function () {
-                            if(index == array.length - 1){
-                                this.removeChildrenByTag(3);
-                                this.enableMoveButton(true);
-                                this.findPictureView();
-                            };
-                        }, this),
-                        cc.callFunc(function () {
-                            if(index == array.length-1) {
-                                // line1.splice(0, line1.length);
-                                // line2.splice(0, line2.length);
-                                // line3.splice(0, line3.length);
-                                this.replaceElement();
-                            }
-                        }, this),
-                    )
-                )
-                    ;
+                heroes.map((reel, idx, arr) => {
+                    reel.map((element, index, array) => {
+                        element.hero.runAction(cc.sequence(
+                                cc.moveTo(MOVING_DURATION, cc.p(element.hero.x, element.hero.y - element.hero.height - 22)),
+                                cc.callFunc(function () {
+
+                                    if (idx == arr.length-1) {
+                                        this.removeChildrenByTag(3);
+                                        this.enableMoveButton(true);
+                                        this.findPictureView();
+                                    }
+                                    ;
+                                }, this),
+                                cc.callFunc(function () {
+                                    if (index == arr.length-1) {
+                                        this.replaceElement(reel);
+                                    }
+                                }, this),
+                            )
+                        );
+                        line1.splice(0, line1.length);
+                        line2.splice(0, line2.length);
+                        line3.splice(0, line3.length);
+                    })
+
                 });
 
             }
 
-            this.replaceElement = function () {
-                heroes.map((item, idx) => {
-                    if (item.hero.y < item.hero.height + item.hero.height / 2) {
-                        item.hero.removeFromParent();
-                        this.createHero(cc.p(item.hero.x, 801), idx);
-                    }
-                })
+            this.replaceElement = function (_element) {
+                _element.map((element, index, array) => {
+                        if (element.hero.y < element.hero.height + element.hero.height / 2) {
+                            cc.log("removed hero = " + element.hero.url);
+                            element.hero.removeFromParent();
+                            array[index].hero = this.createHero(cc.p(element.hero.x, 801));
+                        }
+                    });
             }
 
             this.removeChildrenByTag = function (tag) {
@@ -254,17 +250,19 @@
 
             //function for finding identical pictures 
             this.findPictureView = function () {
-                heroes.forEach((hero) => {
-                    let picture = hero.hero;
-                    let picturePosition = Math.round(picture.y);
-                    cc.log("position = " + picturePosition);
-                    if (picturePosition == 621) {
-                        this.drawLineWin(line1, picture);
-                    } else if (picturePosition == 441) {
-                        this.drawLineWin(line2, picture);
-                    } else if (picturePosition == 261) {
-                        this.drawLineWin(line3, picture);
-                    }
+                heroes.map((heroArr, index, array) => {
+                    heroArr.map((hero, idx, arr) => {
+                        let picture = hero;
+                        let picturePosition = Math.round(picture.y);
+                        if (picturePosition == 621) {
+                            this.drawLineWin(line1, picture);
+                        } else if (picturePosition == 441) {
+                            this.drawLineWin(line2, picture);
+                        } else if (picturePosition == 261) {
+                            this.drawLineWin(line3, picture);
+                        }
+                    })
+
                 });
 
                 this.removeChildrenByTag(2);
