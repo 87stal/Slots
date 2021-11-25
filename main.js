@@ -17,12 +17,11 @@
             GENERAL_TEXTURE_PATH = "icons/";
             HERO_ADD_POSITION = cc.p(300, 750);
 
-            HEROES_POSITIONS = [340, 620, 890
-            ]
+            HEROES_POSITIONS = [340, 620, 890];
 
             START_Y = 261
             GENERAL_MOVING_DURATION = 4;
-            MOVING_DURATION = 2;
+            MOVING_DURATION = 1;
             ELEMENT_HEIGHT = 180;
             BTN_SOUND = "res/btns.mp3";
             BTN_POSITION = cc.p(870, 110);
@@ -30,11 +29,7 @@
             TEXT_RES_POSITION = cc.p(200, 80);
             BTN_MINUS_POSITION = cc.p(570, 110);
             BET_FIELD_POSITION = cc.p(605, 80);
-
-            reel1 = [];
-            reel2 = [];
-            reel3 = [];
-
+            sumMovingDuration = 0;
 
             clippingLayer = null;
             heroes = [[], [], []];
@@ -195,49 +190,58 @@
                     cc.audioEngine.playEffect(BTN_SOUND, false);
                     this.enableMoveButton(false);
                     this.heroesActions();
+                    this.lineWinLayer.removeAllChildren();
                 }
             }
 
-
             this.heroesActions = function () {
                 this.createText("...");
-                heroes.map((reel, idx, arr) => {
+                this.iterateOverHeroes(heroes);
+            }
+
+            this.iterateOverHeroes = function(_heroes) {
+                _heroes.map((reel, idx, arr) => {
                     reel.map((element, index, array) => {
                         element.hero.runAction(cc.sequence(
                                 cc.moveTo(MOVING_DURATION, cc.p(element.hero.x, element.hero.y - element.hero.height - 22)),
+                                // cc.callFunc(function () {
+                                //     if (idx == arr.length - 1) {
+                                //
+                                //     };
+                                // }, this),
                                 cc.callFunc(function () {
-
-                                    if (idx == arr.length-1) {
-                                        this.removeChildrenByTag(3);
-                                        this.enableMoveButton(true);
-                                        this.findPictureView();
-                                    }
-                                    ;
-                                }, this),
-                                cc.callFunc(function () {
-                                    if (index == arr.length-1) {
+                                    if (index == array.length - 1) {
                                         this.replaceElement(reel);
+                                    }
+                                    if (idx == arr.length - 1 && index == array.length - 1) {
+
+                                        if(sumMovingDuration == GENERAL_MOVING_DURATION) {
+                                            this.findPictureView();
+                                            line1.splice(0, line1.length);
+                                            line2.splice(0, line2.length);
+                                            line3.splice(0, line3.length);
+                                            this.removeChildrenByTag(3);
+                                            this.enableMoveButton(true);
+                                            sumMovingDuration=0;
+                                         }else if(sumMovingDuration !== GENERAL_MOVING_DURATION){
+                                            sumMovingDuration+=MOVING_DURATION;
+                                            this.iterateOverHeroes(_heroes);
+                                         }
                                     }
                                 }, this),
                             )
                         );
-                        line1.splice(0, line1.length);
-                        line2.splice(0, line2.length);
-                        line3.splice(0, line3.length);
                     })
-
                 });
 
             }
-
             this.replaceElement = function (_element) {
                 _element.map((element, index, array) => {
-                        if (element.hero.y < element.hero.height + element.hero.height / 2) {
-                            cc.log("removed hero = " + element.hero.url);
-                            element.hero.removeFromParent();
-                            array[index].hero = this.createHero(cc.p(element.hero.x, 801));
-                        }
-                    });
+                    if (element.hero.y < element.hero.height + element.hero.height / 2) {
+                        element.hero.removeFromParent();
+                        array[index].hero = this.createHero(cc.p(element.hero.x, 801));
+                    }
+                });
             }
 
             this.removeChildrenByTag = function (tag) {
@@ -250,22 +254,16 @@
 
             //function for finding identical pictures 
             this.findPictureView = function () {
-                heroes.map((heroArr, index, array) => {
-                    heroArr.map((hero, idx, arr) => {
-                        let picture = hero;
-                        let picturePosition = Math.round(picture.y);
-                        if (picturePosition == 621) {
-                            this.drawLineWin(line1, picture);
-                        } else if (picturePosition == 441) {
-                            this.drawLineWin(line2, picture);
-                        } else if (picturePosition == 261) {
-                            this.drawLineWin(line3, picture);
+                heroes.map((reel, idx, arr) => {
+                    let counter = 0;
+                    reel.map((element, index, array) => {
+                        if (isElementVisible(element.hero)) {
+                            this.drawLineWin(getWinLineByIndex(counter), element);
+                            counter++;
                         }
-                    })
-
+                    });
                 });
 
-                this.removeChildrenByTag(2);
 
                 if (this.lineWinLayer.getChildrenCount() > 0) {
                     this.createText("You win");
@@ -274,16 +272,34 @@
                 }
             };
 
+            function isElementVisible(_element) {
+                if (_element.y > 160 && _element.y < 700) {
+                    return true;
+                }
+                return false;
+            }
+
+            function getWinLineByIndex(_index) {
+                if (_index == 0) {
+                    return line1;
+                } else if (_index == 1) {
+                    return line2;
+                } else if (_index == 2) {
+                    return line3;
+                }
+            }
+
             //function for drawing lines
             this.drawLineWin = function (line, picture) {
-                line.push(picture.url);
+                line.push(picture.hero.url);
+
                 let samePictures = line.filter(function (elem, pos, arr) {
                     return pos !== arr.indexOf(elem) || pos !== arr.lastIndexOf(elem);
                 });
 
                 if (samePictures.length > 1) {
                     var drowedLine = new cc.DrawNode();
-                    drowedLine.drawSegment(cc.p(203, picture.y), cc.p(1020, picture.y), 2, cc.color.RED);
+                    drowedLine.drawSegment(cc.p(203, picture.hero.y), cc.p(1020, picture.hero.y), 2, cc.color.RED);
                     this.lineWinLayer.addChild(drowedLine);
                 }
 
