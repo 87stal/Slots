@@ -7,6 +7,7 @@
             let layerPopup = new PopupLayer.extend();
             layerPopup.init();
             this.addChild( layerPopup, 5 );
+
             //make a clipping node less than game canvas by 200px, see index.html for gameCanvas size
             CLIPPING_RECTANGLE =
                 [cc.p(200, 160), cc.p(200, 700),
@@ -324,7 +325,7 @@
                 var randomName = Math.floor(Math.random() * TEXTURES_NAMES.length);
                 return GENERAL_TEXTURE_PATH + TEXTURES_NAMES[randomName] + ".png";
             };
-cc.log(this.getChildByTag(1));
+            cc.log(this.getChildByTag(1));
             this.init();
         }
     });
