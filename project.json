@@ -4,5 +4,6 @@
     "id"            : "gameCanvas",
     "renderMode"    : 1,
     "jsList"        : [
+        "Popup.layer.js"
       ]
 }

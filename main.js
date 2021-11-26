@@ -4,7 +4,9 @@
     var MainScene = cc.Scene.extend({
         onEnter: function () {
             this._super();
-
+            let layerPopup = new PopupLayer.extend();
+            layerPopup.init();
+            this.addChild( layerPopup, 5 );
             //make a clipping node less than game canvas by 200px, see index.html for gameCanvas size
             CLIPPING_RECTANGLE =
                 [cc.p(200, 160), cc.p(200, 700),
@@ -13,13 +15,13 @@
                 [cc.p(605, 80), cc.p(605, 140),
                     cc.p(665, 140), cc.p(665, 80)];
             //see icons.plist for details
-            TEXTURES_NAMES = ["CC", "DD", "EE", "WC", "WC_X2", "AA", "BB"];
+            TEXTURES_NAMES = ["CC", "DD", "EE", "WC_X2", "AA", "BB"];
             GENERAL_TEXTURE_PATH = "icons/";
             HERO_ADD_POSITION = cc.p(300, 750);
 
             HEROES_POSITIONS = [340, 620, 890];
 
-            START_Y = 261
+            START_Y = 261;
             GENERAL_MOVING_DURATION = 4;
             MOVING_DURATION = 1;
             ELEMENT_HEIGHT = 180;
@@ -97,7 +99,7 @@
                 this.moveButton = new ccui.Button.create("res/btn_normal.png", "res/btn_pressed.png", "res/btn_disabled.png");
                 this.moveButton.addTouchEventListener(this.moveHeroes, this);
                 this.moveButton.setPosition(BTN_POSITION);
-                this.addChild(this.moveButton, 1);
+                this.addChild(this.moveButton, 1, 1);
             };
 
             this.createBetPlusButton = function () {
@@ -128,7 +130,7 @@
                     this.textBet.setString(text);
                 }
                 var drowedField = new cc.DrawNode();
-                this.addChild(drowedField, 500);
+                this.addChild(drowedField, 2);
                 drowedField.drawPoly(FIELD_BET, 0, 2, cc.color.GREEN);
             }
             /**
@@ -203,31 +205,26 @@
                 _heroes.map((reel, idx, arr) => {
                     reel.map((element, index, array) => {
                         element.hero.runAction(cc.sequence(
-                                cc.moveTo(MOVING_DURATION, cc.p(element.hero.x, element.hero.y - element.hero.height - 22)),
-                                // cc.callFunc(function () {
-                                //     if (idx == arr.length - 1) {
-                                //
-                                //     };
-                                // }, this),
+                                cc.moveTo(MOVING_DURATION, cc.p(element.hero.x, element.hero.y - element.hero.height-22)),
                                 cc.callFunc(function () {
                                     if (index == array.length - 1) {
                                         this.replaceElement(reel);
                                     }
                                     if (idx == arr.length - 1 && index == array.length - 1) {
+                                        if(sumMovingDuration < GENERAL_MOVING_DURATION){
+                                            this.iterateOverHeroes(_heroes);
+                                            sumMovingDuration+=MOVING_DURATION;
 
-                                        if(sumMovingDuration == GENERAL_MOVING_DURATION) {
-                                            this.findPictureView();
+                                         }else if(sumMovingDuration >= GENERAL_MOVING_DURATION) {
+                                            //this.findPictureView();
                                             line1.splice(0, line1.length);
                                             line2.splice(0, line2.length);
                                             line3.splice(0, line3.length);
                                             this.removeChildrenByTag(3);
                                             this.enableMoveButton(true);
                                             sumMovingDuration=0;
-                                         }else if(sumMovingDuration !== GENERAL_MOVING_DURATION){
-                                            sumMovingDuration+=MOVING_DURATION;
-                                            this.iterateOverHeroes(_heroes);
                                          }
-                                    }
+                                     }
                                 }, this),
                             )
                         );
@@ -258,12 +255,12 @@
                     let counter = 0;
                     reel.map((element, index, array) => {
                         if (isElementVisible(element.hero)) {
+                            cc.log('counter = ' + counter);
                             this.drawLineWin(getWinLineByIndex(counter), element);
                             counter++;
                         }
                     });
                 });
-
 
                 if (this.lineWinLayer.getChildrenCount() > 0) {
                     this.createText("You win");
@@ -327,7 +324,7 @@
                 var randomName = Math.floor(Math.random() * TEXTURES_NAMES.length);
                 return GENERAL_TEXTURE_PATH + TEXTURES_NAMES[randomName] + ".png";
             };
-
+cc.log(this.getChildByTag(1));
             this.init();
         }
     });
